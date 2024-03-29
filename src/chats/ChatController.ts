@@ -47,5 +47,22 @@ export const getChat = Controller<ChatGet, Authorized>(async (req, res) => {
     throw new ResponseError(404, 'Chat not found')
   }
 
-  res.status(200).json(foundChat)
+  res.status(200).json({
+    id: foundChat.id,
+    name: foundChat.name,
+    members: foundChat.members,
+    isGroup: foundChat.isGroup,
+  })
+})
+
+export const getChats = Controller<never, Authorized>(async (req, res) => {
+  const { userId } = req.body
+
+  // Don't select non-group chats without messages
+  const chats = await ChatModel.find({
+    members: userId,
+    $or: [{ isGroup: true }, { messages: { $exists: true, $ne: [] } }],
+  }).select('id name lastMessage')
+
+  res.status(200).json(chats)
 })

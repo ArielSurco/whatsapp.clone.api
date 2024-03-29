@@ -1,5 +1,6 @@
 import cors from 'cors'
 import express, { Application } from 'express'
+import mongoose from 'mongoose'
 
 import { ENV } from '../shared/constants/environment'
 
@@ -35,7 +36,13 @@ export class Server {
     this.app.use(ErrorHandler)
   }
 
-  public init() {
+  private connectDB() {
+    return mongoose.connect(ENV.MONGO_URI)
+  }
+
+  public async init() {
+    await this.connectDB()
+
     this.app.listen(ENV.PORT, () => {
       console.log(`Server is running on port ${ENV.PORT}`)
     })

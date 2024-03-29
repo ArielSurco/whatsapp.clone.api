@@ -6,7 +6,7 @@ import { ResponseError } from './ResponseError'
 
 export const ErrorHandler = (
   err: ResponseError,
-  req: Request,
+  _req: Request,
   res: Response,
   next: NextFunction,
 ) => {
@@ -19,9 +19,10 @@ export const ErrorHandler = (
   const showStack = ENV.NODE_ENV === 'development'
 
   res.status(errorStatus)
-  res.send({
+  res.json({
     status: errorStatus,
     message: errorMessage,
+    issues: err.issues,
     stack: showStack ? err.stack : undefined,
   })
 }

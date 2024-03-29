@@ -67,6 +67,7 @@ export const userInfo = Controller<never, Authorized>(async (req, res) => {
   }
 
   res.status(200).json({
+    id: foundUser.id,
     username: foundUser.username,
     email: foundUser.email,
   })

@@ -4,8 +4,10 @@ import { Controller } from '../shared/types/Controller'
 import { UserModel } from '../user/models/UserModel'
 
 import { ChatModel } from './models/ChatModel'
+import { MessageModel } from './models/MessageModel'
 import { ChatCreate } from './schemas/ChatCreate'
 import { ChatGet } from './schemas/ChatGet'
+import { MessageCreate } from './schemas/MessageCreate'
 
 export const createChat = Controller<never, ChatCreate & Authorized>(async (req, res) => {
   const { userId, name, members, isGroup } = req.body
@@ -65,4 +67,43 @@ export const getChats = Controller<never, Authorized>(async (req, res) => {
   }).select('id name lastMessage')
 
   res.status(200).json(chats)
+})
+
+export const sendMessage = Controller<ChatGet, Authorized & MessageCreate>(async (req, res) => {
+  const { chatId } = req.params
+  const { userId, text } = req.body
+
+  const chatExists = await ChatModel.exists({ _id: chatId })
+
+  if (!chatExists) {
+    throw new ResponseError(404, 'Chat not found')
+  }
+
+  const foundChat = await ChatModel.findOne({ _id: chatId, members: userId })
+
+  if (!foundChat) {
+    throw new ResponseError(403, 'You are not a member of this chat')
+  }
+
+  const newMessage = new MessageModel({ text, sender: userId })
+
+  foundChat.messages.push(newMessage)
+  foundChat.lastMessage = newMessage.id
+  foundChat.updatedAt = new Date()
+
+  await foundChat.save()
+
+  res.status(201).json({ message: 'Message sent successfully' })
+})
+
+export const getMessages = Controller<ChatGet, Authorized>(async (req, res) => {
+  const { chatId } = req.params
+
+  const foundChat = await ChatModel.findById(chatId).populate('messages.sender', 'username')
+
+  if (!foundChat) {
+    throw new ResponseError(404, 'Chat not found')
+  }
+
+  res.status(200).json(foundChat.messages)
 })

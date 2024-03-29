@@ -1,3 +1,3 @@
 export interface Authorized {
-  userId: number
+  userId: string
 }

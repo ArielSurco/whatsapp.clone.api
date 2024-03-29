@@ -61,10 +61,14 @@ export const getChats = Controller<never, Authorized>(async (req, res) => {
   const { userId } = req.body
 
   // Don't select non-group chats without messages
+
+  // Also select lastMessage
   const chats = await ChatModel.find({
     members: userId,
     $or: [{ isGroup: true }, { messages: { $exists: true, $ne: [] } }],
-  }).select('id name lastMessage')
+  })
+    .select('id name lastMessage isGroup')
+    .populate('lastMessage.sender', 'username')
 
   res.status(200).json(chats)
 })
@@ -88,7 +92,7 @@ export const sendMessage = Controller<ChatGet, Authorized & MessageCreate>(async
   const newMessage = new MessageModel({ text, sender: userId })
 
   foundChat.messages.push(newMessage)
-  foundChat.lastMessage = newMessage.id
+  foundChat.lastMessage = newMessage
   foundChat.updatedAt = new Date()
 
   await foundChat.save()

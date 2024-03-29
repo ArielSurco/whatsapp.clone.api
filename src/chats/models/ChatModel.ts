@@ -18,8 +18,7 @@ const ChatSchema = new Schema({
     default: [],
   },
   lastMessage: {
-    type: Schema.Types.ObjectId,
-    ref: 'Message',
+    type: MessageSchema,
     default: null,
   },
   isGroup: {

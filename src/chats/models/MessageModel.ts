@@ -17,3 +17,11 @@ export const MessageSchema = new Schema({
 })
 
 export const MessageModel = model('Message', MessageSchema)
+
+MessageSchema.set('toJSON', {
+  transform: (doc, ret) => {
+    ret.id = ret._id
+    delete ret._id
+    delete ret.__v
+  },
+})

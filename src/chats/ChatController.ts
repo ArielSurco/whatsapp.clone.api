@@ -60,11 +60,9 @@ export const getChat = Controller<ChatGet, Authorized>(async (req, res) => {
 export const getChats = Controller<never, Authorized>(async (req, res) => {
   const { userId } = req.body
 
-  // Don't select non-group chats without messages
-
-  // Also select lastMessage
   const chats = await ChatModel.find({
     members: userId,
+    // Don't select non-group chats without messages
     $or: [{ isGroup: true }, { messages: { $exists: true, $ne: [] } }],
   })
     .select('id name lastMessage isGroup')
@@ -97,7 +95,14 @@ export const sendMessage = Controller<ChatGet, Authorized & MessageCreate>(async
 
   await foundChat.save()
 
-  res.status(201).json({ message: 'Message sent successfully' })
+  await newMessage.populate('sender', 'username')
+
+  res.status(201).json({
+    id: newMessage.id,
+    text: newMessage.text,
+    sender: newMessage.sender,
+    createdAt: newMessage.createdAt,
+  })
 })
 
 export const getMessages = Controller<ChatGet, Authorized>(async (req, res) => {

@@ -6,8 +6,8 @@ type ControllerCallback<
   RequestBody = Record<string, any>,
   ResponseBody = unknown,
 > = (
-  req: Request<ParamsDictionary, ResponseBody, RequestBody>,
-  res: Response,
+  req: Request<ParamsDictionary, any, RequestBody>,
+  res: Response<ResponseBody>,
   next: NextFunction,
 ) => Promise<void> | void
 

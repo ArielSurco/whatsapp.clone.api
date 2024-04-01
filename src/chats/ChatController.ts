@@ -1,6 +1,8 @@
 import { ResponseError } from '../server/ResponseError'
+import { DEFAULT_PAGINATION } from '../shared/constants/defaultPagination'
 import { Authorized } from '../shared/types/Authorized'
 import { Controller } from '../shared/types/Controller'
+import { PaginationResponse } from '../shared/types/PaginationResponse'
 import { UserModel } from '../user/models/UserModel'
 
 import { ChatModel } from './models/ChatModel'
@@ -105,14 +107,29 @@ export const sendMessage = Controller<ChatGet, Authorized & MessageCreate>(async
   })
 })
 
-export const getMessages = Controller<ChatGet, Authorized>(async (req, res) => {
+export const getMessages = Controller<ChatGet, Authorized, PaginationResponse>(async (req, res) => {
   const { chatId } = req.params
 
-  const foundChat = await ChatModel.findById(chatId).populate('messages.sender', 'username')
+  const limitQuery = Number(req.query.limit)
+  const offsetQuery = Number(req.query.offset)
+
+  // Validates if limit and offset are valid numbers
+  // Doesn't throw errors, but avoid using invalida or unexpected values
+  const limit = limitQuery && limitQuery >= 1 ? limitQuery : DEFAULT_PAGINATION.limit
+  const offset = offsetQuery && offsetQuery >= 0 ? offsetQuery : DEFAULT_PAGINATION.offset
+
+  const foundChat = await ChatModel.findById(chatId).select('messages')
 
   if (!foundChat) {
     throw new ResponseError(404, 'Chat not found')
   }
 
-  res.status(200).json(foundChat.messages)
+  // TODO: Perform pagination, maybe using MessageSchema as a Model insteand of a Subdocument of ChatModel
+  const messages = foundChat.messages.slice(offset, offset + limit)
+  const total = foundChat.messages.length
+
+  res.status(200).json({
+    data: messages,
+    total: total,
+  })
 })

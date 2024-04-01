@@ -7,7 +7,7 @@ export const ValidateSchema =
   (schema: AnyZodObject, type: 'body' | 'params') =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req[type])
+      schema.safeParse(req[type])
       next()
     } catch (error: unknown) {
       if (error instanceof ZodError) {

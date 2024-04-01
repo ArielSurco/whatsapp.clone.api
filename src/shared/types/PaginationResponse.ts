@@ -1,4 +1,4 @@
 export interface PaginationResponse<T = unknown> {
-  data: T[]
+  results: T[]
   total: number
 }

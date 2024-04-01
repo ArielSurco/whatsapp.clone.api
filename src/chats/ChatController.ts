@@ -131,7 +131,7 @@ export const getMessages = Controller<ChatGet, Authorized, PaginationResponse>(a
   const total = foundChat.messages.length
 
   res.status(200).json({
-    data: messages,
+    results: messages,
     total: total,
   })
 })

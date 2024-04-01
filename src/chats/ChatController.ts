@@ -118,7 +118,9 @@ export const getMessages = Controller<ChatGet, Authorized, PaginationResponse>(a
   const limit = limitQuery && limitQuery >= 1 ? limitQuery : DEFAULT_PAGINATION.limit
   const offset = offsetQuery && offsetQuery >= 0 ? offsetQuery : DEFAULT_PAGINATION.offset
 
-  const foundChat = await ChatModel.findById(chatId).select('messages')
+  const foundChat = await ChatModel.findById(chatId)
+    .select('messages')
+    .populate('messages.sender', 'username')
 
   if (!foundChat) {
     throw new ResponseError(404, 'Chat not found')

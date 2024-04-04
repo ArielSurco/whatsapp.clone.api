@@ -127,7 +127,10 @@ export const getMessages = Controller<ChatGet, Authorized, PaginationResponse>(a
   }
 
   // TODO: Perform pagination, maybe using MessageSchema as a Model insteand of a Subdocument of ChatModel
-  const messages = foundChat.messages.slice(offset, offset + limit)
+  const messages = foundChat.messages
+    .reverse()
+    .slice(offset, offset + limit)
+    .reverse()
   const total = foundChat.messages.length
 
   res.status(200).json({

@@ -20,7 +20,9 @@ export const getUsers = Controller<never, Authorized, ResponseItem[]>(async (req
     _id: { $ne: userId },
     username: { $regex: parsedUsername, $options: 'i' },
     isActive: true,
-  }).select('id username email')
+  })
+    .select('id username email')
+    .sort('username')
 
   const privateChats = await ChatModel.find({
     isGroup: false,

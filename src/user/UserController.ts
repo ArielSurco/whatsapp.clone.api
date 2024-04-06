@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt'
 import jwt from 'jsonwebtoken'
 
+import { ChatModel } from '../chats/models/ChatModel'
 import { ResponseError } from '../server/ResponseError'
 import { ENV } from '../shared/constants/environment'
 import { Authorized } from '../shared/types/Authorized'
@@ -78,17 +79,25 @@ export const getUsers = Controller<never, Authorized, UserInfo[]>(async (req, re
   // I want to allow optionally filtering by username
   // So I'm not validating if the query parameter exists
   const { username } = req.query
+  const { userId } = req.body
   const parsedUsername = typeof username === 'string' ? username : ''
 
   const users = await UserModel.find({
+    _id: { $ne: userId },
     username: { $regex: parsedUsername, $options: 'i' },
     isActive: true,
   }).select('id username email')
 
-  const responseUsers: UserInfo[] = users.map((user) => ({
+  const privateChats = await ChatModel.find({
+    isGroup: false,
+    members: userId,
+  })
+
+  const responseUsers = users.map((user) => ({
     id: user.id,
     username: user.username,
     email: user.email,
+    chatId: privateChats.find((chat) => !chat.isGroup && chat.members.includes(user.id))?.id,
   }))
 
   res.status(200).json(responseUsers)

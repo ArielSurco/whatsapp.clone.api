@@ -9,6 +9,7 @@ import { Controller } from '../shared/types/Controller'
 import { UserModel } from './models/UserModel'
 import { UserLogin } from './schemas/UserLogin'
 import { UserRegister } from './schemas/UserRegister'
+import { UserInfo } from './types/UserInfo'
 
 export const registerUser = Controller<never, UserRegister>(async (req, res) => {
   const { username, email, password } = req.body
@@ -57,7 +58,7 @@ export const loginUser = Controller<never, UserLogin>(async (req, res) => {
   })
 })
 
-export const userInfo = Controller<never, Authorized>(async (req, res) => {
+export const userInfo = Controller<never, Authorized, UserInfo>(async (req, res) => {
   const { userId } = req.body
 
   const foundUser = await UserModel.findById(userId)
@@ -71,4 +72,24 @@ export const userInfo = Controller<never, Authorized>(async (req, res) => {
     username: foundUser.username,
     email: foundUser.email,
   })
+})
+
+export const getUsers = Controller<never, Authorized, UserInfo[]>(async (req, res) => {
+  // I want to allow optionally filtering by username
+  // So I'm not validating if the query parameter exists
+  const { username } = req.query
+  const parsedUsername = typeof username === 'string' ? username : ''
+
+  const users = await UserModel.find({
+    username: { $regex: parsedUsername, $options: 'i' },
+    isActive: true,
+  }).select('id username email')
+
+  const responseUsers: UserInfo[] = users.map((user) => ({
+    id: user.id,
+    username: user.username,
+    email: user.email,
+  }))
+
+  res.status(200).json(responseUsers)
 })

@@ -5,10 +5,11 @@ import { ValidateSchema } from '../shared/middlewares/ValidateSchema'
 
 import { UserLoginSchema } from './schemas/UserLogin'
 import { UserRegisterSchema } from './schemas/UserRegister'
-import { loginUser, registerUser, userInfo } from './UserController'
+import { getUsers, loginUser, registerUser, userInfo } from './UserController'
 
 const router = Router()
 
+router.get('/', ValidateAuth, getUsers)
 router.get('/me', ValidateAuth, userInfo)
 
 router.post('/register', ValidateSchema(UserRegisterSchema, 'body'), registerUser)

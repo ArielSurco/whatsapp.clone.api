@@ -10,20 +10,21 @@ import { MessageModel } from './models/MessageModel'
 import { ChatCreate } from './schemas/ChatCreate'
 import { ChatGet } from './schemas/ChatGet'
 import { MessageCreate } from './schemas/MessageCreate'
+import { getPrivateChatName } from './utils/getPrivateChatName'
 
 export const createChat = Controller<never, ChatCreate & Authorized>(async (req, res) => {
-  const { userId, name, members, isGroup } = req.body
+  const { name, members, isGroup } = req.body
 
-  if (!isGroup && members.length !== 1) {
+  if (!isGroup && members.length > 2) {
     throw new ResponseError(
       400,
-      'Cannot create a chat with more than one member if it is not a group chat',
+      'Cannot create a chat with more than two members if it is not a group chat',
     )
   }
 
-  const validMembers = await UserModel.find({ $or: [{ _id: userId }, { _id: { $in: members } }] })
+  const validMembers = await UserModel.find({ _id: { $in: members } })
 
-  if (validMembers.length !== members.length + 1) {
+  if (validMembers.length !== members.length) {
     throw new ResponseError(400, 'One or more members are invalid')
   }
 
@@ -44,6 +45,7 @@ export const createChat = Controller<never, ChatCreate & Authorized>(async (req,
 
 export const getChat = Controller<ChatGet, Authorized>(async (req, res) => {
   const { chatId } = req.params
+  const { userId } = req.body
 
   const foundChat = await ChatModel.findById(chatId).populate('members', 'username')
 
@@ -51,9 +53,16 @@ export const getChat = Controller<ChatGet, Authorized>(async (req, res) => {
     throw new ResponseError(404, 'Chat not found')
   }
 
+  const parsedName = foundChat.isGroup
+    ? foundChat.name
+    : await getPrivateChatName(
+        userId,
+        foundChat.members.map((member) => member.id.toString()),
+      )
+
   res.status(200).json({
     id: foundChat.id,
-    name: foundChat.name,
+    name: parsedName,
     members: foundChat.members,
     isGroup: foundChat.isGroup,
   })
@@ -67,10 +76,24 @@ export const getChats = Controller<never, Authorized>(async (req, res) => {
     // Don't select non-group chats without messages
     $or: [{ isGroup: true }, { messages: { $exists: true, $ne: [] } }],
   })
-    .select('id name lastMessage isGroup')
+    .select('id name lastMessage isGroup members')
     .populate('lastMessage.sender', 'username')
 
-  res.status(200).json(chats)
+  const chatsResponse = await Promise.all(
+    chats.map(async (chat) => ({
+      id: chat.id,
+      name: chat.isGroup
+        ? chat.name
+        : await getPrivateChatName(
+            userId,
+            chat.members.map((member) => member.toString()),
+          ),
+      lastMessage: chat.lastMessage,
+      isGroup: chat.isGroup,
+    })),
+  )
+
+  res.status(200).json(chatsResponse)
 })
 
 export const sendMessage = Controller<ChatGet, Authorized & MessageCreate>(async (req, res) => {

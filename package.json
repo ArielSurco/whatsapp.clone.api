@@ -10,7 +10,7 @@
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
     "dev": "nodemon src/index.ts",
-    "build": "tsc",
+    "build": "npx tsc",
     "prod": "build && node dist/index.js"
   },
   "keywords": [],

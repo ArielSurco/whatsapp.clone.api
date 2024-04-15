@@ -9,9 +9,7 @@
     "lint:fix": "eslint . --fix --ext .tsx,.ts,.jsx,.js,.cjs,.mjs",
     "format": "prettier . --check",
     "format:fix": "prettier . --write",
-    "dev": "nodemon src/index.ts",
-    "build": "npx tsc",
-    "prod": "build && node dist/index.js"
+    "dev": "nodemon src/index.ts"
   },
   "keywords": [],
   "author": "",
